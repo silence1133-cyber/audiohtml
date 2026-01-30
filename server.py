@@ -50,7 +50,8 @@ def setup_logging(config: dict):
         config: 설정 딕셔너리
     """
     log_config = config.get('logging', {})
-    log_dir = log_config.get('log_dir', 'logs')
+    # log_dir와 log_path 둘 다 지원 (하위 호환성)
+    log_dir = log_config.get('log_dir') or log_config.get('log_path', 'logs')
     log_file = log_config.get('log_file', 'server.log')
     log_level = log_config.get('log_level', 'INFO')
     max_bytes = log_config.get('max_bytes', 10485760)  # 10MB
@@ -58,7 +59,7 @@ def setup_logging(config: dict):
     
     # 로그 디렉토리 생성
     os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, log_file)
+    log_file_path = os.path.join(log_dir, log_file)
     
     # 로거 설정
     logger = logging.getLogger()
@@ -70,7 +71,7 @@ def setup_logging(config: dict):
     
     # 파일 핸들러 (로테이션 지원)
     file_handler = RotatingFileHandler(
-        log_path,
+        log_file_path,
         maxBytes=max_bytes,
         backupCount=backup_count,
         encoding='utf-8'
@@ -91,7 +92,7 @@ def setup_logging(config: dict):
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
     
-    logging.info(f"로깅 시스템 초기화 완료 (파일: {log_path}, 레벨: {log_level})")
+    logging.info(f"로깅 시스템 초기화 완료 (파일: {log_file_path}, 레벨: {log_level})")
 
 
 # 설정 로드
