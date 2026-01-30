@@ -2,6 +2,12 @@
 .env
 .env.local
 
+# 설정 파일 (보안 정보가 포함될 수 있음)
+config/config.yaml
+
+# SSL 인증서 파일
+certs/
+
 # Python 캐시
 __pycache__/
 *.py[cod]
