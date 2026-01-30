@@ -6,6 +6,10 @@ server:
   port: 8000
   host: "0.0.0.0"
 
+# Gemini API 설정
+gemini:
+  model: "gemini-1.5-flash-latest"  # 사용할 모델: gemini-1.5-flash-latest, gemini-1.5-pro-latest, gemini-pro
+
 # HTTPS 설정
 https:
   enabled: false  # HTTPS 사용 여부 (true/false)

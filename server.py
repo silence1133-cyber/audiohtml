@@ -213,11 +213,15 @@ def summarize_audio_with_gemini(uploaded_file) -> dict:
     Returns:
         {"summary": "요약본", "original_text": "원본 텍스트"} 형태의 딕셔너리
     """
-    logging.info("[분석] Gemini 1.5 Flash로 음성 분석 중...")
+    # 설정에서 모델 이름 가져오기
+    gemini_config = config.get('gemini', {})
+    model_name = gemini_config.get('model', 'gemini-1.5-flash-latest')
+    
+    logging.info(f"[분석] Gemini ({model_name})로 음성 분석 중...")
     
     try:
-        # Gemini 1.5 Flash 무료 모델 사용
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Gemini 모델 사용
+        model = genai.GenerativeModel(model_name)
         
         # 1단계: 원본 텍스트 추출
         logging.info("[분석] 1단계 - 음성을 텍스트로 변환 중...")

@@ -104,7 +104,8 @@ def summarize_audio_with_gemini(uploaded_file: any) -> str:
     
     try:
         # Gemini 1.5 Flash 무료 모델 사용
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Gemini 1.5 Flash Latest 모델 사용 (최신 API 버전)
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         
         # 프롬프트 작성
         prompt = "이 회의 녹음 파일을 분석해서, 주요 안건, 결정 사항, 향후 행동 계획(Action Item)으로 요약해줘."
