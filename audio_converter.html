@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>음성 텍스트 변환/요약</title>
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .drag-over {
+            @apply border-gray-800 bg-gray-900;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full">
+        <!-- 헤더 -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">🎙️ 음성 텍스트 변환/요약</h1>
+            <p class="text-gray-400 text-sm">Powered by Gemini 1.5 Flash</p>
+        </div>
+
+        <!-- 메인 카드 -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8">
+            <!-- 파일 업로드 영역 -->
+            <div id="uploadArea" 
+                 class="border-3 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50 mb-6">
+                <input type="file" id="fileInput" class="hidden" accept=".mp3,.wav,.m4a,.ogg,.flac,.aac,.wma,.webm">
+                <div class="text-6xl mb-4">📁</div>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">파일을 드래그하거나 클릭하여 업로드</h3>
+                <p class="text-sm text-gray-500">MP3, WAV, M4A, OGG, FLAC, AAC, WMA, WEBM</p>
+            </div>
+
+            <!-- 선택된 파일 정보 -->
+            <div id="selectedFile" class="hidden bg-gray-100 rounded-lg p-4 mb-6">
+                <p class="text-sm text-gray-600">선택된 파일:</p>
+                <p id="fileName" class="font-semibold text-gray-800"></p>
+            </div>
+
+            <!-- 요약하기 버튼 -->
+            <button id="uploadBtn" 
+                    disabled
+                    class="w-full bg-gray-900 text-white py-4 rounded-xl font-semibold text-lg hover:bg-gray-800 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl">
+                요약하기
+            </button>
+
+            <!-- 로딩 스피너 -->
+            <div id="loading" class="hidden text-center py-8">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-gray-600 font-medium">AI가 음성을 분석 중입니다...</p>
+                <p class="text-sm text-gray-500 mt-2">잠시만 기다려주세요</p>
+            </div>
+
+            <!-- 에러 메시지 -->
+            <div id="error" class="hidden mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                <p class="font-semibold">오류 발생</p>
+                <p id="errorMessage" class="text-sm"></p>
+            </div>
+
+            <!-- 결과 영역 -->
+            <div id="result" class="hidden mt-8 space-y-6">
+                <!-- 요약 결과 -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">📝 요약 결과</h2>
+                        <button onclick="copyToClipboard('summary')" 
+                                class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-800 transition-all">
+                            복사
+                        </button>
+                    </div>
+                    <div id="summary" class="text-gray-700 whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+
+                <!-- 변환된 텍스트 -->
+                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">📄 변환된 텍스트</h2>
+                        <button onclick="copyToClipboard('originalText')" 
+                                class="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-800 transition-all">
+                            복사
+                        </button>
+                    </div>
+                    <div id="originalText" class="text-gray-700 whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="text-center mt-6">
+            <p class="text-gray-500 text-sm">무료 API 사용으로 하루 1,500회 제한이 있습니다</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+        const selectedFile = document.getElementById('selectedFile');
+        const fileName = document.getElementById('fileName');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // API 서버 주소 (실제 배포 시 수정)
+        const API_URL = window.location.origin.includes('localhost') 
+            ? 'http://localhost:8000' 
+            : 'http://api.info-zip.kr/summarize';  // ← 실제 서버 IP로 변경
+
+        let selectedAudioFile = null;
+
+        // 업로드 영역 클릭
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // 파일 선택
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        // 드래그 앤 드롭
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            if (e.dataTransfer.files[0]) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        // 파일 선택 처리
+        function handleFileSelect(file) {
+            const validExtensions = ['mp3', 'wav', 'm4a', 'ogg', 'flac', 'aac', 'wma', 'webm'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
+            if (!validExtensions.includes(fileExtension)) {
+                showError('지원하지 않는 파일 형식입니다.');
+                return;
+            }
+
+            selectedAudioFile = file;
+            fileName.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            selectedFile.classList.remove('hidden');
+            uploadBtn.disabled = false;
+            hideError();
+            hideResult();
+        }
+
+        // 요약하기 버튼 클릭
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedAudioFile) return;
+
+            uploadBtn.disabled = true;
+            showLoading();
+            hideError();
+            hideResult();
+
+            const formData = new FormData();
+            formData.append('file', selectedAudioFile);
+
+            try {
+                const response = await fetch(`${API_URL}/summarize`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || '서버 오류가 발생했습니다.');
+                }
+
+                const data = await response.json();
+                showResult(data.summary, data.original_text);
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                hideLoading();
+                uploadBtn.disabled = false;
+            }
+        });
+
+        // 로딩 표시/숨김
+        function showLoading() {
+            loading.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loading.classList.add('hidden');
+        }
+
+        // 결과 표시/숨김
+        function showResult(summary, originalText) {
+            document.getElementById('summary').textContent = summary;
+            document.getElementById('originalText').textContent = originalText;
+            result.classList.remove('hidden');
+        }
+
+        function hideResult() {
+            result.classList.add('hidden');
+        }
+
+        // 에러 표시/숨김
+        function showError(message) {
+            errorMessage.textContent = message;
+            error.classList.remove('hidden');
+        }
+
+        function hideError() {
+            error.classList.add('hidden');
+        }
+
+        // 클립보드 복사
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('클립보드에 복사되었습니다!');
+            }).catch(() => {
+                alert('복사에 실패했습니다.');
+            });
+        }
+    </script>
+</body>
+</html>
