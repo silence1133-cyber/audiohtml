@@ -13,6 +13,15 @@ Google Gemini 1.5 Flash 무료 API를 사용하여 음성 파일을 텍스트로
   - 실행 항목 정리 (있는 경우)
 - 🔒 개인정보 보호 (처리 후 파일 자동 삭제)
 - 💰 완전 무료 (Google Gemini 1.5 Flash 무료 API 사용)
+- 🚀 Linux 서비스로 자동 시작/관리 지원
+- 🔐 HTTPS/SSL 지원
+- 📊 로깅 시스템 내장
+
+## 📚 문서
+
+- **[SERVICE_GUIDE.md](SERVICE_GUIDE.md)** - Linux 서비스 설치 가이드 (AWS Linux)
+- **[CONFIG_GUIDE.md](CONFIG_GUIDE.md)** - 설정 시스템 가이드 (포트, HTTPS, 로그)
+- **[config/README.md](config/README.md)** - 상세 설정 및 SSL 인증서 가이드
 
 ## 📋 사전 요구사항
 
@@ -52,13 +61,60 @@ sudo yum install ffmpeg
 
 ## 🚀 설치 및 사용 방법
 
-### 1. 프로젝트 다운로드
+### 방법 1: AWS Linux 서비스로 설치 (추천)
+
+가상환경 없이 systemd 서비스로 설치하여 자동 시작/관리가 가능합니다.
+
+#### 빠른 설치
+
+```bash
+# 1. 프로젝트 다운로드
+git clone <repository-url>
+cd <project-directory>
+
+# 2. API Key 설정
+echo 'GOOGLE_API_KEY=your_api_key_here' > .env
+
+# 3. 설정 파일 생성
+cp config/config.example.yaml config/config.yaml
+
+# 4. 자동 설치 스크립트 실행
+chmod +x install.sh
+sudo ./install.sh
+
+# 5. 서비스 시작
+sudo systemctl start audio-server
+```
+
+#### 서비스 관리
+
+```bash
+# 시작
+sudo systemctl start audio-server
+
+# 중지
+sudo systemctl stop audio-server
+
+# 상태 확인
+sudo systemctl status audio-server
+
+# 로그 확인
+sudo journalctl -u audio-server -f
+```
+
+**자세한 내용**: [SERVICE_GUIDE.md](SERVICE_GUIDE.md) 참고
+
+---
+
+### 방법 2: 수동 실행 (개발/테스트용)
+
+#### 1. 프로젝트 다운로드
 ```bash
 git clone <repository-url>
 cd <project-directory>
 ```
 
-### 2. 가상환경 생성 및 활성화
+#### 2. 가상환경 생성 및 활성화
 ```bash
 # 가상환경 생성
 python -m venv venv
@@ -70,31 +126,45 @@ source venv/bin/activate
 venv\Scripts\activate
 ```
 
-### 3. 필요한 라이브러리 설치
+#### 3. 필요한 라이브러리 설치
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. API Key 설정
-`.env` 파일을 열고 발급받은 API Key를 입력합니다:
+#### 4. API Key 설정
+`.env` 파일을 생성하고 발급받은 API Key를 입력합니다:
 
 ```env
 GOOGLE_API_KEY=여기에_발급받은_API_KEY_입력
 ```
 
-### 5. 프로그램 실행
+#### 5. 설정 파일 생성
+```bash
+cp config/config.example.yaml config/config.yaml
+```
+
+#### 6. 프로그램 실행
+
+**CLI 모드 (단일 파일 처리):**
 ```bash
 python main.py
 ```
 
-### 6. 오디오 파일 경로 입력
+**서버 모드 (API 서버):**
+```bash
+python server.py
+```
+
+서버 접속: http://localhost:8000
+
+#### 7. 오디오 파일 경로 입력 (CLI 모드)
 프롬프트가 나타나면 회의 녹음 파일의 경로를 입력합니다:
 
 ```
 오디오 파일 경로를 입력하세요: /path/to/meeting.m4a
 ```
 
-### 7. 결과 확인
+#### 8. 결과 확인
 - 화면에 요약 결과가 출력됩니다
 - 동일한 폴더에 `.txt` 파일로 저장됩니다
 

@@ -1,0 +1,33 @@
+[Unit]
+Description=Audio Transcription and Summary Service
+After=network.target
+Documentation=https://github.com/silence1133-cyber/audiohtml
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/home/ec2-user/audio
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+EnvironmentFile=/home/ec2-user/audio/.env
+ExecStart=/usr/bin/python3 /home/ec2-user/audio/server.py
+
+# 재시작 정책
+Restart=always
+RestartSec=10
+
+# 로그 설정
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=audio-server
+
+# 보안 설정
+NoNewPrivileges=true
+PrivateTmp=true
+
+# 리소스 제한 (선택사항)
+# LimitNOFILE=65536
+# LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
