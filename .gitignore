@@ -32,3 +32,8 @@ Thumbs.db
 # 로그 파일
 *.log
 logs/
+
+# PyInstaller 빌드 파일
+build/
+dist/
+*.spec
