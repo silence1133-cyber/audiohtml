@@ -127,7 +127,7 @@
         // API 서버 주소 (실제 배포 시 수정)
         const API_URL = window.location.origin.includes('localhost') 
             ? 'http://localhost:8000' 
-            : 'http://api.info-zip.kr';  // ← /summarize 제거 (아래에서 추가됨)
+            : 'https://api.info-zip.kr';  // HTTPS로 변경 (Mixed Content 오류 방지)
 
         let selectedAudioFile = null;
 
