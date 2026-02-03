@@ -349,8 +349,8 @@ async def seoul_api_proxy():
             )
         
         # 서울시 지하철 수유실 정보 API URL
-        # 참고: http://openapi.seoul.go.kr:8088/{KEY}/json/nurseryInfo/{START_INDEX}/{END_INDEX}/
-        api_url = f"http://openapi.seoul.go.kr:8088/{seoul_api_key}/json/nurseryInfo/1/1000/"
+        # 참고: http://openapi.seoul.go.kr:8088/{KEY}/json/getFcNrsrm/{START_INDEX}/{END_INDEX}/
+        api_url = f"http://openapi.seoul.go.kr:8088/{seoul_api_key}/json/getFcNrsrm/1/1000/"
         
         logging.info(f"[서울API] 서울시 API 호출 중: {api_url.replace(seoul_api_key, '***KEY***')}")
         
