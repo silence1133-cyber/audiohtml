@@ -41,9 +41,16 @@ pyinstaller \
     --hidden-import=starlette \
     --hidden-import=yaml \
     --hidden-import=multipart \
+    --hidden-import=httpx \
+    --hidden-import=httpx._client \
+    --hidden-import=httpx._config \
+    --hidden-import=httpx._models \
+    --hidden-import=h11 \
+    --hidden-import=h2 \
     --collect-all google.generativeai \
     --collect-all uvicorn \
     --collect-all fastapi \
+    --collect-all httpx \
     server.py
 
 echo ""
@@ -56,7 +63,9 @@ echo "파일 크기: $(du -h dist/audio-server | cut -f1)"
 echo ""
 echo "배포 준비:"
 echo "1. dist/audio-server 파일 복사"
-echo "2. .env 파일 준비 (GOOGLE_API_KEY 설정)"
+echo "2. .env 파일 준비"
+echo "   - GOOGLE_API_KEY 설정 (오디오 변환용)"
+echo "   - SEOUL_API_KEY 설정 (서울시 API용)"
 echo "3. config/config.yaml 파일 준비"
 echo "4. FFmpeg 설치 확인"
 echo ""

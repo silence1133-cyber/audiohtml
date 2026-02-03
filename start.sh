@@ -34,7 +34,7 @@ echo "Python 버전: $(python3 --version)"
 
 # 패키지 설치 확인 (선택사항)
 echo "필요한 패키지 확인 중..."
-python3 -c "import fastapi, uvicorn, yaml" 2>/dev/null
+python3 -c "import fastapi, uvicorn, yaml, httpx" 2>/dev/null
 if [ $? -ne 0 ]; then
     echo "경고: 일부 패키지가 설치되어 있지 않습니다."
     echo "다음 명령으로 설치하세요: pip3 install -r requirements.txt"

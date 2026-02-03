@@ -77,10 +77,20 @@ echo ""
 echo "[설정] .env 파일 확인..."
 if [ ! -f "$INSTALL_DIR/.env" ]; then
     echo "[경고] .env 파일이 없습니다."
-    echo "       GOOGLE_API_KEY를 설정하기 위해 .env 파일을 생성하세요:"
-    echo "       echo 'GOOGLE_API_KEY=your_api_key_here' > .env"
+    echo "       다음 내용으로 .env 파일을 생성하세요:"
+    echo ""
+    echo "       cat > .env << EOF"
+    echo "       GOOGLE_API_KEY=your_google_api_key_here"
+    echo "       SEOUL_API_KEY=your_seoul_api_key_here"
+    echo "       EOF"
+    echo ""
 else
     echo "[확인] .env 파일이 존재합니다."
+    # SEOUL_API_KEY 확인
+    if ! grep -q "SEOUL_API_KEY" "$INSTALL_DIR/.env"; then
+        echo "[경고] .env 파일에 SEOUL_API_KEY가 없습니다."
+        echo "       서울시 API 기능을 사용하려면 SEOUL_API_KEY를 추가하세요."
+    fi
 fi
 
 # logs 디렉토리 생성
