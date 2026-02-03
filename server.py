@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 import yaml
+import httpx
 
 # 환경변수 로드
 load_dotenv()
@@ -316,6 +317,7 @@ async def root():
         "powered_by": "Gemini 1.5 Flash",
         "endpoints": {
             "/summarize": "POST - 오디오 파일 업로드 및 텍스트 변환/요약",
+            "/seoulapi": "GET - 서울시 지하철 수유실 정보 API 프록시",
             "/health": "GET - 서버 상태 확인"
         }
     }
@@ -328,6 +330,93 @@ async def health():
         "status": "ok",
         "message": "서버가 정상적으로 작동 중입니다."
     }
+
+
+@app.get("/seoulapi")
+async def seoul_api_proxy():
+    """
+    서울시 지하철 수유실 정보 API 프록시
+    실제 서울시 API를 호출하여 결과를 반환합니다.
+    """
+    try:
+        # 환경변수에서 서울시 API 키 가져오기
+        seoul_api_key = os.getenv('SEOUL_API_KEY')
+        if not seoul_api_key:
+            logging.warning("[서울API] SEOUL_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.")
+            raise HTTPException(
+                status_code=500,
+                detail="서울시 API 키가 설정되지 않았습니다. 관리자에게 문의하세요."
+            )
+        
+        # 서울시 지하철 수유실 정보 API URL
+        # 참고: http://openapi.seoul.go.kr:8088/{KEY}/json/nurseryInfo/{START_INDEX}/{END_INDEX}/
+        api_url = f"http://openapi.seoul.go.kr:8088/{seoul_api_key}/json/nurseryInfo/1/1000/"
+        
+        logging.info(f"[서울API] 서울시 API 호출 중: {api_url.replace(seoul_api_key, '***KEY***')}")
+        
+        # 비동기 HTTP 클라이언트로 서울시 API 호출
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(api_url)
+            
+            # 응답 상태 코드 확인
+            if response.status_code != 200:
+                logging.error(f"[서울API] HTTP 오류: {response.status_code}")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"서울시 API 호출 실패 (HTTP {response.status_code})"
+                )
+            
+            # JSON 응답 파싱
+            data = response.json()
+            
+            # 서울시 API 응답 구조 확인 및 변환
+            # 서울시 API: { "nurseryInfo": { "row": [...], "list_total_count": N } }
+            # 변환 목표: { "response": { "body": { "items": { "item": [...] }, "totalCount": N } } }
+            
+            if 'nurseryInfo' in data:
+                nursery_info = data['nurseryInfo']
+                rows = nursery_info.get('row', [])
+                total_count = nursery_info.get('list_total_count', len(rows))
+                
+                # 응답 데이터 로깅
+                logging.info(f"[서울API] 성공: {total_count}건의 데이터 수신")
+                
+                # index.html이 기대하는 형식으로 변환
+                transformed_data = {
+                    "response": {
+                        "body": {
+                            "items": {
+                                "item": rows
+                            },
+                            "totalCount": total_count
+                        }
+                    }
+                }
+                
+                return JSONResponse(content=transformed_data)
+            else:
+                logging.warning(f"[서울API] 예상치 못한 응답 구조: {list(data.keys())}")
+                # 원본 데이터 그대로 반환
+                return JSONResponse(content=data)
+    
+    except httpx.TimeoutException:
+        logging.error("[서울API] 요청 타임아웃")
+        raise HTTPException(
+            status_code=504,
+            detail="서울시 API 응답 시간 초과"
+        )
+    except httpx.RequestError as e:
+        logging.error(f"[서울API] 네트워크 오류: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"서울시 API 연결 실패: {str(e)}"
+        )
+    except Exception as e:
+        logging.error(f"[서울API] 오류 발생: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"서버 오류: {str(e)}"
+        )
 
 
 @app.post("/summarize")
